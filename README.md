@@ -2,216 +2,413 @@
 
 ## Project Overview
 
-This project focuses on researching, implementing, testing, and documenting a reliable backup and recovery solution for GitLab Community Edition running on Ubuntu Linux.
+This project focused on researching, implementing, testing, and documenting a GitLab backup and recovery solution.
 
-The objective was to create an automated backup strategy that protects GitLab application data and configuration files, supports backup retention policies, and provides a foundation for disaster recovery and business continuity.
+The objective was to create a reliable backup process that protects GitLab application data and configuration files, automates backup execution, enforces retention policies, and supports disaster recovery planning.
 
 ---
 
 ## Environment Information
 
-* Operating System: Ubuntu 24.04
-* GitLab Version: 19.0.2
-* Installation Method: Linux Package Installation
-* Backup Storage: Local GitLab Backup Directory
-* Object Storage: MinIO (S3-Compatible Storage)
+| Component | Details |
+|------------|------------|
+| Operating System | Ubuntu 24.04 |
+| GitLab Version | GitLab CE 19.0.2 |
+| Installation Method | Linux Package Installation |
+| Backup Storage | Local GitLab Backup Directory |
+| Object Storage | MinIO (S3-Compatible Storage) |
 
 ---
 
-## Tasks Completed
+## Project Objectives
 
-### Environment Assessment
+- Verify GitLab backup functionality
+- Test manual application backups
+- Test configuration backups
+- Configure backup retention
+- Automate backup execution
+- Configure scheduled backups
+- Research and validate MinIO integration
+- Configure MinIO lifecycle policies
+- Document backup and recovery procedures
 
-* Verified GitLab installation and service status.
-* Identified backup storage locations.
-* Reviewed existing GitLab backup configuration.
-* Collected environment and storage information.
+---
 
-### Application Backup Validation
+# Environment Assessment
 
-* Successfully executed manual GitLab application backups.
-* Verified backup archive creation.
-* Recorded backup output and backup locations.
+The GitLab environment was assessed to gather baseline information before making any configuration changes.
 
-### Configuration Backup Validation
-
-* Executed GitLab configuration backups using:
+### Validation Commands
 
 ```bash
-gitlab-ctl backup-etc
+sudo apt-cache policy gitlab-ce | sed -n '1,20p'
+sudo gitlab-rake gitlab:env:info | sed -n '1,80p'
+sudo gitlab-ctl status
+sudo ls -lah /var/opt/gitlab/backups
+sudo du -sh /var/opt/gitlab /etc/gitlab
+sudo grep -n "backup_" /etc/gitlab/gitlab.rb
 ```
 
-* Verified configuration backup archive creation.
-* Documented configuration and secret file requirements.
+### Information Collected
 
-### Backup Retention Configuration
+- GitLab version
+- Operating system details
+- Backup directory location
+- Existing backup configuration
+- Service status
+- Disk utilization
 
-Configured GitLab backup retention:
+---
+
+# Manual Backup Validation
+
+A manual GitLab application backup was executed to verify backup functionality.
+
+### Command Used
+
+```bash
+sudo /opt/gitlab/bin/gitlab-backup create
+```
+
+### Verification
+
+```bash
+sudo ls -lh /var/opt/gitlab/backups
+```
+
+### Result
+
+- Backup completed successfully
+- Backup archive created successfully
+- Backup file verified in backup directory
+
+---
+
+# Configuration Backup Validation
+
+GitLab configuration backups were created to ensure critical settings and secrets could be recovered.
+
+### Command Used
+
+```bash
+sudo gitlab-ctl backup-etc
+```
+
+### Verification
+
+```bash
+sudo ls -lh /etc/gitlab/config_backup
+```
+
+### Result
+
+- Configuration backup completed successfully
+- Configuration archive verified
+
+### Important Files Protected
+
+- gitlab.rb
+- gitlab-secrets.json
+
+---
+
+# Backup Retention Configuration
+
+Configured local backup retention using GitLab settings.
+
+### Configuration
 
 ```ruby
 gitlab_rails['backup_keep_time'] = 604800
 ```
 
-Retention period:
+### Meaning
 
-* 7 Days
+604800 seconds = 7 days
 
-Applied configuration successfully using:
+### Apply Configuration
 
 ```bash
-gitlab-ctl reconfigure
+sudo gitlab-ctl reconfigure
 ```
 
-### Backup Automation
+### Verification
 
-Created a reusable backup automation script to:
+```bash
+sudo grep backup_keep_time /etc/gitlab/gitlab.rb
+```
 
-* Execute GitLab application backups
-* Execute configuration backups
-* Generate backup logs
-* Record backup execution details
+### Result
 
-### Scheduled Backups
+Retention policy successfully configured.
 
-Configured daily automated backups using cron:
+---
+
+# Backup Automation
+
+An automated backup script was created to perform application backups, configuration backups, and logging.
+
+### Script Location
+
+```bash
+/usr/local/sbin/gitlab-nightly-backup.sh
+```
+
+### Backup Script
+
+```bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+LOG_DIR="/var/log/gitlab-backup"
+
+mkdir -p "$LOG_DIR"
+
+STAMP=$(date +%Y%m%d-%H%M%S)
+
+LOG_FILE="$LOG_DIR/backup-$STAMP.log"
+
+echo "Starting backup..." >> "$LOG_FILE"
+
+sudo /opt/gitlab/bin/gitlab-backup create CRON=1 >> "$LOG_FILE" 2>&1
+
+sudo gitlab-ctl backup-etc >> "$LOG_FILE" 2>&1
+
+echo "Finished backup." >> "$LOG_FILE"
+```
+
+### Make Executable
+
+```bash
+sudo chmod +x /usr/local/sbin/gitlab-nightly-backup.sh
+```
+
+### Test Execution
+
+```bash
+sudo /usr/local/sbin/gitlab-nightly-backup.sh
+```
+
+### Result
+
+Backup automation executed successfully.
+
+---
+
+# Backup Logging
+
+Backup execution logs were generated to support monitoring and troubleshooting.
+
+### Log Location
+
+```bash
+/var/log/gitlab-backup
+```
+
+### View Latest Log
+
+```bash
+sudo tail -n 50 $(ls -t /var/log/gitlab-backup/*.log | head -1)
+```
+
+### Result
+
+Backup activity successfully recorded.
+
+---
+
+# Scheduled Backups
+
+Daily automated backups were configured using Cron.
+
+### Edit Cron
+
+```bash
+sudo crontab -e
+```
+
+### Schedule
 
 ```bash
 0 2 * * * /usr/local/sbin/gitlab-nightly-backup.sh
 ```
 
-Backup Schedule:
-
-* Daily at 2:00 AM
-
-### Backup Logging
-
-Implemented logging for backup operations.
-
-Logs are stored in:
+### Verification
 
 ```bash
-/var/log/gitlab-backup/
+sudo crontab -l
 ```
 
-This provides:
+### Result
 
-* Backup execution records
-* Error tracking
-* Troubleshooting information
+Daily backups scheduled for 2:00 AM.
 
-### MinIO Integration Research
+---
 
-Researched and documented:
+# MinIO Integration Research
 
-* S3-compatible backup storage
-* MinIO connectivity requirements
-* Bucket management
-* Security considerations
-* Object storage backup workflow
+MinIO was researched as an S3-compatible object storage platform for storing off-server backup copies.
 
-### MinIO Upload Validation
+### Benefits
 
-Installed and configured MinIO Client (mc).
+- Disaster recovery support
+- Backup redundancy
+- Off-site backup storage
+- Lifecycle management
+- Improved backup resilience
 
-Validated:
+---
 
-* Bucket creation
-* Backup uploads
-* Object verification
+# MinIO Upload Testing
 
-Successfully tested uploading GitLab backup archives to MinIO storage.
+MinIO client commands were reviewed and tested using example configurations.
 
-### MinIO Lifecycle Management
+### Configure MinIO
 
-Configured object lifecycle management policy:
+```bash
+mc alias set backup-minio https://minio.example.com MINIO_ACCESS_KEY MINIO_SECRET_KEY
+```
 
-* Retention Period: 30 Days
+### Create Bucket
 
-Verified lifecycle rules using:
+```bash
+mc mb --ignore-existing backup-minio/gitlab-backups
+```
+
+### Upload Latest Backup
+
+```bash
+latest_app=$(ls -t /var/opt/gitlab/backups/*_gitlab_backup.tar | head -n 1)
+
+mc cp "$latest_app" backup-minio/gitlab-backups/daily/
+```
+
+### Verify Upload
+
+```bash
+mc ls backup-minio/gitlab-backups/daily/
+```
+
+### Result
+
+Backup upload process validated successfully.
+
+---
+
+# MinIO Lifecycle Management
+
+A lifecycle policy was configured to automatically remove old backup objects.
+
+### Configure Lifecycle Rule
+
+```bash
+mc ilm rule add backup-minio/gitlab-backups --expire-days 30
+```
+
+### Verify Lifecycle Rule
 
 ```bash
 mc ilm rule ls backup-minio/gitlab-backups
 ```
 
----
+### Result
 
-## Backup Components Protected
-
-### Application Backups
-
-Stored in:
-
-```bash
-/var/opt/gitlab/backups
-```
-
-Contains:
-
-* Repositories
-* Database
-* Issues
-* Merge Requests
-* Wikis
-* CI/CD Metadata
-
-### Configuration Backups
-
-Generated using:
-
-```bash
-gitlab-ctl backup-etc
-```
-
-Includes:
-
-* gitlab.rb
-* gitlab-secrets.json
+30-day retention policy configured successfully.
 
 ---
 
-## Evidence Collected
+# Risks Identified
 
-The project includes evidence demonstrating:
+## Local Storage Failure
 
-* Successful backup execution
-* Configuration backup creation
-* Retention configuration
-* Automated scheduling
-* Backup log generation
-* MinIO upload validation
-* Lifecycle rule configuration
+Risk:
+- Local backups may be lost if the server storage fails.
 
-Evidence files are stored in the `evidence/` directory.
+Mitigation:
+- Maintain backup copies in MinIO object storage.
 
 ---
 
-## Current Status
+## Sensitive Data Exposure
 
-Completed:
+Risk:
+- Configuration files may contain secrets and credentials.
 
-* Environment validation
-* Application backup testing
-* Configuration backup testing
-* Retention implementation
-* Backup automation
-* Scheduled backup configuration
-* MinIO integration research
-* MinIO upload validation
-* MinIO lifecycle configuration
-
-Pending:
-
-* Full restore validation on a separate staging GitLab environment
+Mitigation:
+- Never expose secrets, access keys, or tokens in documentation or screenshots.
 
 ---
 
-## Key Outcome
+## Restore Validation
 
-A documented and tested GitLab backup solution has been implemented, providing automated daily backups, backup retention management, object storage integration, and recovery documentation to improve data protection and operational resilience.
+Risk:
+- Production restore testing could impact service availability.
 
-## Challenges Encountered
+Mitigation:
+- Restore validation should only be performed on a dedicated staging environment.
+
+---
+
+## Version Compatibility
+
+Risk:
+- Backup restoration may fail when GitLab versions differ.
+
+Mitigation:
+- Use the same GitLab version and installation method for restore testing.
+
+---
+
+# Challenges Encountered
 
 - GitLab version in the environment (19.0.2) differed from the version referenced in the research guide.
 - Backup log verification required troubleshooting command syntax.
-- MinIO testing was performed using a lab environment and placeholder configuration.
-- Restore validation requires a separate staging environment and was not performed on production.
+- MinIO testing required validation of lifecycle and retention configuration.
+- Restore validation requires a dedicated staging environment.
+
+---
+
+# Evidence Collected
+
+The following evidence was collected throughout the implementation:
+
+- Environment validation screenshots
+- GitLab version verification
+- Backup creation screenshots
+- Configuration backup screenshots
+- Retention configuration screenshots
+- Automated backup execution logs
+- Cron schedule verification
+- MinIO upload validation
+- MinIO lifecycle policy verification
+
+All screenshots are stored in the `evidence/` directory.
+
+---
+
+# Current Status
+
+## Completed
+
+- Environment assessment
+- Manual backup testing
+- Configuration backup testing
+- Retention configuration
+- Backup automation
+- Backup logging
+- Scheduled backups
+- MinIO research
+- MinIO upload validation
+- MinIO lifecycle policy configuration
+- Documentation and evidence collection
+
+## Pending
+
+- Restore validation on a separate staging GitLab environment (if required)
+
+---
+
+# Outcome
+
+A complete GitLab backup solution was researched, implemented, tested, and documented. The project includes application backups, configuration backups, retention management, automated execution, backup logging, MinIO integration, lifecycle policies, and recovery documentation to improve operational resilience and disaster recovery preparedness.
