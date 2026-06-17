@@ -208,3 +208,10 @@ Pending:
 ## Key Outcome
 
 A documented and tested GitLab backup solution has been implemented, providing automated daily backups, backup retention management, object storage integration, and recovery documentation to improve data protection and operational resilience.
+
+## Challenges Encountered
+
+- GitLab version in the environment (19.0.2) differed from the version referenced in the research guide.
+- Backup log verification required troubleshooting command syntax.
+- MinIO testing was performed using a lab environment and placeholder configuration.
+- Restore validation requires a separate staging environment and was not performed on production.
