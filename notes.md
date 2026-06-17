@@ -114,3 +114,80 @@ Recommendation:
 
 Proceed with local GitLab backups and retention policy implementation while awaiting reviewer-approved MinIO details.
 
+# GitLab Backup Research Notes
+
+## Phase 2 - Environment Information
+
+### Operating System
+
+Ubuntu 22.04.5 LTS (Jammy Jellyfish)
+
+### Hostname
+
+gitlab-staging
+
+### GitLab Version
+
+Not installed / unable to determine
+
+### Backup Path
+
+N/A
+
+### Configuration Backup Path
+
+N/A
+
+### GitLab Disk Usage
+
+N/A
+
+### GitLab Configuration Usage
+
+N/A
+
+## Findings
+
+The following checks indicate that GitLab is not installed on this VM:
+
+* `gitlab-rake` command not found
+* `gitlab-ctl` command not found
+* `/etc/gitlab` directory does not exist
+* `/var/opt/gitlab` directory does not exist
+* `gitlab-ce` package cannot be located via apt
+* GitLab backup directories are absent
+
+## Impact
+
+Because GitLab is not installed, the following phases cannot be completed on this VM:
+
+* Phase 3 – Manual Backup Test
+* Phase 4 – Backup Configuration Files
+* Phase 5 – Configure Retention
+* Phase 6 – Create Backup Script
+* Phase 7 – Schedule Daily Backup
+* Phase 9 – Test MinIO Upload
+* Phase 10 – Configure MinIO Retention
+* Phase 11 – Restore Validation
+
+All GitLab-specific commands will fail until GitLab CE is installed.
+
+## Additional Validation Performed
+
+Commands executed:
+
+```bash
+sudo apt-cache policy gitlab-ce
+sudo find / -maxdepth 3 -iname "*gitlab*" 2>/dev/null
+dpkg -l | grep -i gitlab
+```
+
+Result:
+
+* No GitLab package identified
+* No GitLab installation directories identified
+* No GitLab services available
+
+## Recommendation
+
+Install GitLab CE on the VM or obtain access to the correct GitLab staging server before continuing with backup implementation and validation activities.
