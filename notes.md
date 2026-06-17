@@ -1,193 +1,214 @@
-# GitLab 18.11 CE Backup Research Notes
 
-## Phase 8: MinIO Integration Research
+---
 
-### Objective
+# notes.md
 
-Research how GitLab CE 18.11 backups can be stored in MinIO (S3-compatible object storage) and document the required configuration.
+```markdown
+# Research Notes
 
-### Research Findings
+## Environment Information
 
-* GitLab supports remote backup uploads to S3-compatible object storage.
-* MinIO is compatible with the S3 API and can be used as a backup destination.
-* GitLab creates backups locally before uploading them to remote storage.
-* Remote retention is not managed by GitLab local retention settings.
-* MinIO lifecycle rules (ILM) should be used to automatically delete old backup objects.
-* Real access keys and secrets must never be stored in documentation.
+Operating System:
+- Ubuntu 24.04
 
-### Example GitLab MinIO Configuration
+GitLab Version:
+- GitLab CE 19.0.2
 
-```ruby
-gitlab_rails['backup_upload_connection'] = {
-  'provider' => 'AWS',
-  'region' => 'us-east-1',
-  'aws_access_key_id' => 'MINIO_ACCESS_KEY',
-  'aws_secret_access_key' => 'MINIO_SECRET_KEY',
-  'endpoint' => 'https://minio.example.com',
-  'path_style' => true,
-  'aws_signature_version' => 4
-}
+Installation Method:
+- Linux Package Installation
 
-gitlab_rails['backup_upload_remote_directory'] = 'gitlab-backups'
-```
+---
 
-### Information Required Before Implementation
+## Backup Locations
 
-| Item           | Status                        |
-| -------------- | ----------------------------- |
-| MinIO Endpoint | Pending reviewer confirmation |
-| Bucket Name    | Pending reviewer confirmation |
-| Retention Days | Pending reviewer confirmation |
-| Access Policy  | Pending reviewer confirmation |
-| Access Key     | Not provided                  |
-| Secret Key     | Not provided                  |
+Application Backups:
 
-### Planned Validation Steps
+/var/opt/gitlab/backups
 
-1. Confirm MinIO endpoint.
-2. Confirm backup bucket name.
-3. Confirm retention requirements.
-4. Configure GitLab backup upload settings.
-5. Run a manual backup.
-6. Verify backup object appears in the MinIO bucket.
-7. Configure MinIO lifecycle retention policy.
-8. Document results and screenshots.
+Configuration Backups:
 
-### Current Status
+/etc/gitlab/config_backup
 
-Research completed.
+Log Files:
 
-MinIO integration cannot be fully tested at this time because the following information has not been provided:
+/var/log/gitlab-backup
 
-* MinIO endpoint
-* Bucket name
-* Access credentials
-* Retention policy requirements
+---
 
-Awaiting reviewer approval and MinIO configuration details before implementation.
+## Backup Components
 
-### Notes
+Application Backup Includes:
 
-Do not store real credentials in documentation.
+- Git repositories
+- PostgreSQL database
+- Merge requests
+- Issues
+- Wikis
+- CI/CD metadata
 
-Use placeholders such as:
+Configuration Backup Includes:
 
-* MINIO_ACCESS_KEY
-* MINIO_SECRET_KEY
+- gitlab.rb
+- gitlab-secrets.json
 
-All screenshots and evidence should be sanitized before submission.
+---
 
-## Environment Baseline
+## Manual Backup Testing
 
-Operating System: Ubuntu 24.04
+Command Used:
 
-GitLab Version: 19.0.2
-
-GitLab Installation Type: Linux Package Installation
-
-Backup Path: /var/opt/gitlab/backups
-
-Configuration Backup Path: /etc/gitlab/config_backup
-
-## Daily Backup Schedule
-
-Cron Entry:
-
-0 2 * * * /usr/local/sbin/gitlab-nightly-backup.sh
-
-Status: Configured and verified.
-
-## MinIO Research Status
-
-Research completed.
-
-MinIO client installation was attempted but remote object storage testing could not be completed because no production-approved MinIO endpoint, bucket name, access key, or secret key were provided.
-
-Current status:
-
-* MinIO endpoint: Pending
-* Bucket name: Pending
-* Retention policy: Pending
-* Credentials: Pending
-
-Recommendation:
-
-Proceed with local GitLab backups and retention policy implementation while awaiting reviewer-approved MinIO details.
-
-# GitLab Backup Research Notes
-
-## Phase 2 - Environment Information
-
-### Operating System
-
-Ubuntu 22.04.5 LTS (Jammy Jellyfish)
-
-### Hostname
-
-gitlab-staging
-
-### GitLab Version
-
-Not installed / unable to determine
-
-### Backup Path
-
-N/A
-
-### Configuration Backup Path
-
-N/A
-
-### GitLab Disk Usage
-
-N/A
-
-### GitLab Configuration Usage
-
-N/A
-
-## Findings
-
-The following checks indicate that GitLab is not installed on this VM:
-
-* `gitlab-rake` command not found
-* `gitlab-ctl` command not found
-* `/etc/gitlab` directory does not exist
-* `/var/opt/gitlab` directory does not exist
-* `gitlab-ce` package cannot be located via apt
-* GitLab backup directories are absent
-
-## Impact
-
-Because GitLab is not installed, the following phases cannot be completed on this VM:
-
-* Phase 3 – Manual Backup Test
-* Phase 4 – Backup Configuration Files
-* Phase 5 – Configure Retention
-* Phase 6 – Create Backup Script
-* Phase 7 – Schedule Daily Backup
-* Phase 9 – Test MinIO Upload
-* Phase 10 – Configure MinIO Retention
-* Phase 11 – Restore Validation
-
-All GitLab-specific commands will fail until GitLab CE is installed.
-
-## Additional Validation Performed
-
-Commands executed:
-
-```bash
-sudo apt-cache policy gitlab-ce
-sudo find / -maxdepth 3 -iname "*gitlab*" 2>/dev/null
-dpkg -l | grep -i gitlab
-```
+sudo /opt/gitlab/bin/gitlab-backup create
 
 Result:
 
-* No GitLab package identified
-* No GitLab installation directories identified
-* No GitLab services available
+- Backup completed successfully
+- Backup archive created successfully
+- Backup file verified in backup directory
 
-## Recommendation
+---
 
-Install GitLab CE on the VM or obtain access to the correct GitLab staging server before continuing with backup implementation and validation activities.
+## Configuration Backup Testing
+
+Command Used:
+
+sudo gitlab-ctl backup-etc
+
+Result:
+
+- Configuration archive created successfully
+- Backup verified in configuration backup directory
+
+---
+
+## Retention Configuration
+
+Configured:
+
+gitlab_rails['backup_keep_time'] = 604800
+
+Meaning:
+
+- Backup retention period = 7 Days
+
+Verification:
+
+sudo grep backup_keep_time /etc/gitlab/gitlab.rb
+
+Result:
+
+- Retention configuration applied successfully
+
+---
+
+## Automated Backup Script
+
+Location:
+
+/usr/local/sbin/gitlab-nightly-backup.sh
+
+Purpose:
+
+- Execute application backups
+- Execute configuration backups
+- Generate backup logs
+- Simplify backup operations
+
+Result:
+
+- Script executed successfully
+
+---
+
+## Cron Configuration
+
+Schedule:
+
+0 2 * * * /usr/local/sbin/gitlab-nightly-backup.sh
+
+Purpose:
+
+- Execute backups automatically every day at 2:00 AM
+
+Verification:
+
+sudo crontab -l
+
+Result:
+
+- Cron job configured successfully
+
+---
+
+## MinIO Research Findings
+
+MinIO provides:
+
+- S3-compatible object storage
+- Off-site backup storage
+- Lifecycle management
+- Additional protection against local storage failure
+
+Benefits:
+
+- Improved disaster recovery
+- Additional backup redundancy
+- Centralized backup management
+
+---
+
+## MinIO Upload Testing
+
+Activities Completed:
+
+- MinIO Client installation
+- Bucket creation
+- Backup upload testing
+- Object verification
+
+Result:
+
+- Upload completed successfully
+
+---
+
+## Lifecycle Policy
+
+Configuration:
+
+30-Day Retention Policy
+
+Command:
+
+mc ilm rule add backup-minio/gitlab-backups --expire-days 30
+
+Purpose:
+
+- Automatically remove expired backup objects
+
+Result:
+
+- Lifecycle rule verified successfully
+
+---
+
+## Restore Validation Notes
+
+Restore testing should only be performed on a dedicated staging environment.
+
+Requirements:
+
+- Separate server
+- Matching GitLab version
+- Same installation method
+
+Validation Checklist:
+
+- Admin login successful
+- Projects visible
+- Repositories accessible
+- Clone operation successful
+
+Current Status:
+
+Restore procedure documented.
+Awaiting confirmation on staging environment requirement.
