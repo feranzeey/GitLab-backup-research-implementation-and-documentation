@@ -429,35 +429,52 @@ Restore testing was initiated using a dedicated staging environment. During vali
 | Backup Version              | GitLab CE 19.0.2  |
 | Staging Environment Version | GitLab CE 18.11.x |
 
-GitLab backups can only be restored to a GitLab instance running the same version (or a compatible upgrade path). Because the staging environment version does not match the backup version, restore validation cannot proceed until the staging environment is upgraded to GitLab CE 19.0.2.
+GitLab backups can only be restored to a GitLab instance running the same version (or a compatible upgrade path). Because the staging environment version does not match the backup version, restore validation cannot proceed until the staging environment is upgraded to GitLab CE 19.0.2.# Restore Validation (Staging Environment)
 
-### Current Status
+## Objective
 
-The GitLab staging environment has been successfully deployed and verified. Backup files have been confirmed and restore requirements have been researched. Restore validation is currently blocked by a GitLab version mismatch between the backup archive and the staging environment.
+Validate that GitLab backups can be restored successfully in a non-production environment.
 
-### Next Steps
+## Environment
 
-1. Upgrade the staging GitLab instance to GitLab CE 19.0.2.
-2. Verify GitLab services after the upgrade.
-3. Copy a backup archive into the staging environment.
-4. Perform a full backup restoration test.
-5. Validate user access, projects, repositories, and application functionality.
-6. Capture restore-validation evidence and update project documentation.
+A separate staging server was provisioned to perform restore testing safely without impacting production systems.
 
-### Project Progress
+### Staging Requirements
 
-| Task                               | Status                     |
-| ---------------------------------- | -------------------------- |
-| Environment Assessment             | PASS                       |
-| Manual Application Backup          | PASS                       |
-| Configuration Backup               | PASS                       |
-| Backup Retention Configuration     | PASS                       |
-| Backup Automation                  | PASS                       |
-| Backup Logging                     | PASS                       |
-| Scheduled Backups                  | PASS                       |
-| MinIO Research                     | PASS                       |
-| MinIO Upload Validation            | PASS                       |
-| MinIO Lifecycle Policy             | PASS                       |
-| Staging Environment Setup          | PASS                       |
-| Restore Validation                 | BLOCKED (Version Mismatch) |
-| Final Disaster Recovery Validation | PENDING                    |
+* Separate server environment
+* Matching GitLab installation method
+* GitLab CE 18.11 installation for compatibility testing
+* Isolated testing environment
+
+## Activities Performed
+
+* Provisioned a dedicated staging environment.
+* Began installation of GitLab CE 18.11.
+* Prepared the environment for backup restoration testing.
+* Reviewed restore prerequisites and validation checklist.
+* Documented recovery validation procedures.
+
+## Planned Validation Checks
+
+After restore completion, the following checks will be performed:
+
+* Administrator login validation
+* Project visibility verification
+* Repository accessibility verification
+* Repository clone testing
+* Service health verification
+
+## Expected Outcome
+
+Successful restore validation will confirm that:
+
+* Backup archives are recoverable.
+* GitLab services can be restored successfully.
+* Projects and repositories remain accessible after recovery.
+* Disaster recovery procedures are documented and repeatable.
+
+## Current Progress
+
+Restore validation is currently in progress.
+
+The staging environment has been prepared and GitLab CE 18.11 installation has been initiated. Restore testing will continue after installation is completed and the environment is fully configured.
