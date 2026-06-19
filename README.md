@@ -389,26 +389,75 @@ All screenshots are stored in the `evidence/` directory.
 
 # Current Status
 
-## Completed
+# GitLab Backup Research & Implementation
 
-- Environment assessment
-- Manual backup testing
-- Configuration backup testing
-- Retention configuration
-- Backup automation
-- Backup logging
-- Scheduled backups
-- MinIO research
-- MinIO upload validation
-- MinIO lifecycle policy configuration
-- Documentation and evidence collection
+## Status
 
-## Pending
+**In Progress**
 
-- Restore validation on a separate staging GitLab environment (if required)
+### Work Completed
 
----
+* Created and configured a dedicated GitLab staging virtual machine in VirtualBox.
+* Installed Ubuntu Server and applied system updates.
+* Installed required GitLab dependencies.
+* Installed and configured GitLab Community Edition on the staging environment.
+* Verified GitLab services were operational using `gitlab-ctl status`.
+* Verified existing production backup files and confirmed multiple valid GitLab backup archives were available.
+* Researched GitLab backup and restore procedures, including version compatibility requirements.
+* Identified that available backup archives were created using GitLab CE 19.0.2.
+* Built a staging environment specifically for restore validation and disaster recovery testing.
+* Updated project documentation and uploaded implementation evidence to GitHub.
 
-# Outcome
+### Validation Results
 
-A complete GitLab backup solution was researched, implemented, tested, and documented. The project includes application backups, configuration backups, retention management, automated execution, backup logging, MinIO integration, lifecycle policies, and recovery documentation to improve operational resilience and disaster recovery preparedness.
+| Validation Item                | Status |
+| ------------------------------ | ------ |
+| Staging VM Creation            | PASS   |
+| Ubuntu Installation & Updates  | PASS   |
+| GitLab Dependency Installation | PASS   |
+| GitLab CE Installation         | PASS   |
+| GitLab Service Verification    | PASS   |
+| Backup Verification            | PASS   |
+| Documentation Update           | PASS   |
+
+### Restore Validation Findings
+
+Restore testing was initiated using a dedicated staging environment. During validation, GitLab backup compatibility requirements were reviewed and a version mismatch was identified.
+
+| Component                   | Version           |
+| --------------------------- | ----------------- |
+| Backup Version              | GitLab CE 19.0.2  |
+| Staging Environment Version | GitLab CE 18.11.x |
+
+GitLab backups can only be restored to a GitLab instance running the same version (or a compatible upgrade path). Because the staging environment version does not match the backup version, restore validation cannot proceed until the staging environment is upgraded to GitLab CE 19.0.2.
+
+### Current Status
+
+The GitLab staging environment has been successfully deployed and verified. Backup files have been confirmed and restore requirements have been researched. Restore validation is currently blocked by a GitLab version mismatch between the backup archive and the staging environment.
+
+### Next Steps
+
+1. Upgrade the staging GitLab instance to GitLab CE 19.0.2.
+2. Verify GitLab services after the upgrade.
+3. Copy a backup archive into the staging environment.
+4. Perform a full backup restoration test.
+5. Validate user access, projects, repositories, and application functionality.
+6. Capture restore-validation evidence and update project documentation.
+
+### Project Progress
+
+| Task                               | Status                     |
+| ---------------------------------- | -------------------------- |
+| Environment Assessment             | PASS                       |
+| Manual Application Backup          | PASS                       |
+| Configuration Backup               | PASS                       |
+| Backup Retention Configuration     | PASS                       |
+| Backup Automation                  | PASS                       |
+| Backup Logging                     | PASS                       |
+| Scheduled Backups                  | PASS                       |
+| MinIO Research                     | PASS                       |
+| MinIO Upload Validation            | PASS                       |
+| MinIO Lifecycle Policy             | PASS                       |
+| Staging Environment Setup          | PASS                       |
+| Restore Validation                 | BLOCKED (Version Mismatch) |
+| Final Disaster Recovery Validation | PENDING                    |
