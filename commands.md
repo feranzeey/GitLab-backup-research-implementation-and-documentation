@@ -1,148 +1,428 @@
-# Commands Used
+# GitLab Backup Research & Implementation - Commands Reference
 
-## Environment Validation
+## 1. Environment Information
+
+### Check Operating System
 
 ```bash
-sudo apt-cache policy gitlab-ce | sed -n '1,20p'
-sudo gitlab-rake gitlab:env:info | sed -n '1,80p'
-sudo gitlab-ctl status
-sudo ls -lah /var/opt/gitlab/backups
-sudo du -sh /var/opt/gitlab /etc/gitlab
-sudo grep -n "backup_" /etc/gitlab/gitlab.rb
+lsb_release -a
 ```
 
-Purpose:
+---
 
-* Verify GitLab version
-* Check service status
-* Review backup configuration
+### Check GitLab Version
 
-## Manual Application Backup
+```bash
+sudo gitlab-rake gitlab:env:info
+```
+
+Used to verify:
+
+* GitLab Edition
+* GitLab Version
+* GitLab components
+
+---
+
+### Check GitLab Services
+
+```bash
+sudo gitlab-ctl status
+```
+
+Expected services:
+
+* nginx
+* postgresql
+* redis
+* sidekiq
+* puma
+
+---
+
+# 2. GitLab Installation Validation
+
+### Check GitLab Package
+
+```bash
+sudo apt-cache policy gitlab-ce
+```
+
+---
+
+### Check GitLab Configuration
+
+```bash
+sudo gitlab-ctl show-config
+```
+
+---
+
+# 3. Application Backup Commands
+
+## Create GitLab Backup
 
 ```bash
 sudo /opt/gitlab/bin/gitlab-backup create
 ```
 
-Purpose:
+or:
 
-* Create a GitLab application backup.
+```bash
+sudo gitlab-backup create
+```
 
-## Verify Backup
+Backup location:
+
+```bash
+/var/opt/gitlab/backups
+```
+
+---
+
+## Verify Backup Files
 
 ```bash
 sudo ls -lh /var/opt/gitlab/backups
 ```
 
-Purpose:
+Example backup:
 
-* Confirm backup archive creation.
+```text
+1782602388_2026_06_27_18.11.6_gitlab_backup.tar
+```
 
-## Configuration Backup
+---
+
+# 4. Configuration Backup Commands
+
+## Create Configuration Backup
 
 ```bash
 sudo gitlab-ctl backup-etc
 ```
 
-Purpose:
+Configuration backup location:
 
-* Back up GitLab configuration files.
+```bash
+/etc/gitlab/config_backup
+```
+
+---
 
 ## Verify Configuration Backup
 
 ```bash
-sudo ls -lh /var/backups/gitlab
+sudo ls -lh /etc/gitlab/config_backup
 ```
 
-Purpose:
+---
 
-* Confirm configuration backup creation.
+# 5. Backup Retention Configuration
 
-## Backup Retention
+Edit GitLab configuration:
 
 ```bash
-sudo grep backup_keep_time /etc/gitlab/gitlab.rb
+sudo nano /etc/gitlab/gitlab.rb
 ```
 
-Configured:
+Add:
 
 ```ruby
 gitlab_rails['backup_keep_time'] = 604800
 ```
 
-Purpose:
+Meaning:
 
-* Retain backups for 7 days.
+```
+604800 seconds = 7 days
+```
 
-## Apply Configuration
+Apply changes:
 
 ```bash
 sudo gitlab-ctl reconfigure
 ```
 
-Purpose:
+Verify:
 
-* Apply GitLab configuration changes.
+```bash
+sudo grep backup_keep_time /etc/gitlab/gitlab.rb
+```
 
-## Automated Backup Script
+---
+
+# 6. Automated Backup Script
+
+Create script:
+
+```bash
+sudo nano /usr/local/sbin/gitlab-nightly-backup.sh
+```
+
+Make executable:
+
+```bash
+sudo chmod +x /usr/local/sbin/gitlab-nightly-backup.sh
+```
+
+Run manually:
 
 ```bash
 sudo /usr/local/sbin/gitlab-nightly-backup.sh
 ```
 
-Purpose:
+---
 
-* Execute automated application and configuration backups.
+# 7. Backup Logging
 
-## View Backup Logs
+Create log directory:
 
 ```bash
-sudo tail -n 50 $(ls -t /var/log/gitlab-backup/*.log | head -1)
+sudo mkdir -p /var/log/gitlab-backup
 ```
 
-Purpose:
+View logs:
 
-* Verify backup execution.
+```bash
+sudo ls -lah /var/log/gitlab-backup
+```
 
-## Schedule Daily Backup
+View latest backup log:
+
+```bash
+sudo tail -n 50 /var/log/gitlab-backup/*.log
+```
+
+---
+
+# 8. Cron Scheduled Backup
+
+Open root cron:
 
 ```bash
 sudo crontab -e
 ```
 
-Cron Entry:
+Add:
 
 ```bash
 0 2 * * * /usr/local/sbin/gitlab-nightly-backup.sh
 ```
 
-Purpose:
+Meaning:
 
-* Run backups daily at 2:00 AM.
-
-## MinIO Upload
-
-```bash
-mc alias set backup-minio https://minio.example.com MINIO_ACCESS_KEY MINIO_SECRET_KEY
-
-mc mb --ignore-existing backup-minio/gitlab-backups
-
-latest_app=$(ls -t /var/opt/gitlab/backups/*_gitlab_backup.tar | head -n 1)
-
-mc cp "$latest_app" backup-minio/gitlab-backups/daily/
+```
+Run backup every day at 2:00 AM
 ```
 
-Purpose:
+Verify:
 
-* Upload GitLab backups to MinIO object storage.
+```bash
+sudo crontab -l
+```
 
-## MinIO Lifecycle Policy
+---
+
+# 9. MinIO Backup Research Commands
+
+## Configure MinIO Client
+
+```bash
+mc alias set backup-minio https://minio.example.com ACCESS_KEY SECRET_KEY
+```
+
+---
+
+## Create Backup Bucket
+
+```bash
+mc mb backup-minio/gitlab-backups
+```
+
+---
+
+## Upload Backup
+
+Example:
+
+```bash
+mc cp /var/opt/gitlab/backups/*.tar backup-minio/gitlab-backups/
+```
+
+---
+
+## Verify Upload
+
+```bash
+mc ls backup-minio/gitlab-backups/
+```
+
+---
+
+# 10. MinIO Lifecycle Management
+
+Create 30-day retention:
 
 ```bash
 mc ilm rule add backup-minio/gitlab-backups --expire-days 30
+```
 
+Check lifecycle:
+
+```bash
 mc ilm rule ls backup-minio/gitlab-backups
 ```
 
-Purpose:
+---
 
-* Automatically remove backup objects older than 30 days.
+# 11. Restore Validation Commands
+
+## Stop GitLab Before Restore
+
+```bash
+sudo gitlab-ctl stop
+```
+
+---
+
+## Move Backup File
+
+```bash
+sudo cp backup_file.tar /var/opt/gitlab/backups/
+```
+
+---
+
+## Set Permissions
+
+```bash
+sudo chown git:git /var/opt/gitlab/backups/*.tar
+```
+
+---
+
+## Restore Backup
+
+Example:
+
+```bash
+sudo gitlab-backup restore BACKUP=1782602388_2026_06_27_18.11.6
+```
+
+---
+
+## Reconfigure GitLab
+
+```bash
+sudo gitlab-ctl reconfigure
+```
+
+---
+
+## Restart GitLab
+
+```bash
+sudo gitlab-ctl restart
+```
+
+---
+
+# 12. Restore Validation Checks
+
+Check services:
+
+```bash
+sudo gitlab-ctl status
+```
+
+Check GitLab health:
+
+```bash
+sudo gitlab-rake gitlab:check
+```
+
+Validate:
+
+* Admin login
+* Projects visible
+* Repository access
+* Clone operation
+
+---
+
+# 13. Troubleshooting Commands
+
+## Check GitLab Logs
+
+```bash
+sudo gitlab-ctl tail
+```
+
+---
+
+## Restart GitLab
+
+```bash
+sudo gitlab-ctl restart
+```
+
+---
+
+## Check Disk Usage
+
+```bash
+df -h
+```
+
+---
+
+## Check GitLab Storage
+
+```bash
+sudo du -sh /var/opt/gitlab
+```
+
+---
+
+# 14. Useful Evidence Commands
+
+Backup verification:
+
+```bash
+sudo ls -lh /var/opt/gitlab/backups
+```
+
+Configuration verification:
+
+```bash
+sudo ls -lh /etc/gitlab/config_backup
+```
+
+Service verification:
+
+```bash
+sudo gitlab-ctl status
+```
+
+Cron verification:
+
+```bash
+sudo crontab -l
+```
+
+---
+
+# Project Summary
+
+These commands were used during the GitLab Backup Research & Implementation project to:
+
+* Validate GitLab environment
+* Create application backups
+* Create configuration backups
+* Configure retention
+* Automate backups
+* Schedule backups
+* Research MinIO storage
+* Prepare restore validation
+* Troubleshoot issues
