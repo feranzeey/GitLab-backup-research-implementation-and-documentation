@@ -2,16 +2,16 @@
 
 ## Project Information
 
-**Prepared by:** Oluwaferanmi Dada
-**Role:** DevOps Intern
-**Project Duration:** June 16th, 2026 - June 29th, 2026
-**Project Type:** GitLab Backup Research & Implementation
+**Prepared by:** Oluwaferanmi Dada  
+**Role:** DevOps Intern  
+**Project Duration:** June 16th, 2026 - June 29th, 2026  
+**Project Type:** GitLab Backup Research & Implementation  
 
 ---
 
-## Repository
+# Repository
 
-GitHub:
+GitHub Repository:
 
 https://github.com/feranzeey/GitLab-backup-research-implementation-and-documentation.git
 
@@ -19,89 +19,78 @@ https://github.com/feranzeey/GitLab-backup-research-implementation-and-documenta
 
 # Project Overview
 
-This project focused on researching, implementing, testing, and documenting a GitLab Community Edition backup and recovery solution.
+This project focused on researching, implementing, testing, and documenting a GitLab backup and recovery solution.
 
-The objective was to create a reliable backup process that protects GitLab application data and configuration files, automates backup execution, applies retention policies, and improves disaster recovery readiness.
+The objective was to create a reliable backup process that protects GitLab application data and configuration files, supports automated backups, verifies backup availability, and documents disaster recovery procedures.
 
-The implementation covered:
-
-* GitLab backup validation
-* Configuration backup
-* Backup automation
-* Backup scheduling
-* Retention management
-* MinIO storage research
-* Restore validation preparation
-* Documentation and evidence collection
+The implementation was performed in a dedicated staging environment using VirtualBox.
 
 ---
 
-# Environment Information
+# Implementation Environment
 
-| Component                 | Details                          |
-| ------------------------- | -------------------------------- |
-| Operating System          | Ubuntu 24.04                     |
-| GitLab Edition            | GitLab CE 19.0.2                 |
-| Installation Method       | Linux Package Installation (APT) |
-| Host Environment          | VirtualBox VM                    |
-| Backup Storage            | Local GitLab Backup Directory    |
-| Application Backup Path   | `/var/opt/gitlab/backups`        |
-| Configuration Backup Path | `/etc/gitlab/config_backup`      |
-| Object Storage Research   | MinIO S3-Compatible Storage      |
+| Component | Details |
+|------------|---------|
+| Operating System | Ubuntu 24.04 |
+| GitLab Edition | GitLab CE 19.0.2 |
+| Installation Method | Linux Package Installation (APT) |
+| Host Environment | VirtualBox VM |
+| Backup Storage | Local GitLab Backup Directory |
+| Object Storage Research | MinIO S3-Compatible Storage |
 
 ---
 
-# Project Objectives
+# Environment Setup
 
-The main objectives were:
-
-* Verify GitLab backup functionality
-* Test manual application backups
-* Test configuration backups
-* Configure backup retention
-* Automate backup execution
-* Configure scheduled backups
-* Research MinIO integration
-* Validate lifecycle retention
-* Prepare disaster recovery procedures
-
----
-
-# Environment Assessment
-
-The GitLab environment was assessed before making configuration changes.
-
-## Validation Commands
-
-```bash
-sudo apt-cache policy gitlab-ce
-
-sudo gitlab-rake gitlab:env:info
-
-sudo gitlab-ctl status
-
-sudo ls -lah /var/opt/gitlab/backups
-
-sudo du -sh /var/opt/gitlab /etc/gitlab
-```
-
-Information collected:
-
-* GitLab version
-* Installation method
-* Service status
-* Backup location
-* Storage usage
+A dedicated GitLab staging environment was created using VirtualBox for safe backup testing.
 
 Evidence:
 
-```
-evidence/01-gitlab-environment.png
-```
+![VirtualBox Environment](evidence/01_environment_setup_virtualbox.png)
 
 ---
 
-# Manual Application Backup Validation
+# GitLab Environment Validation
+
+GitLab environment information was collected to confirm installation details and running components.
+
+Command:
+
+```bash
+sudo gitlab-rake gitlab:env:info
+```
+
+Validated:
+
+- GitLab version
+- GitLab Shell
+- Gitaly
+- Database information
+- Installation details
+
+Evidence:
+
+![GitLab Environment](evidence/02_gitlab_environment_information.png)
+
+---
+
+# GitLab Installation Validation
+
+GitLab Community Edition was installed successfully using the Linux package installation method.
+
+Installation confirmed:
+
+- GitLab package installation
+- Required services
+- GitLab availability
+
+Evidence:
+
+![GitLab Installation](evidence/03_gitlab_installation_success.png)
+
+---
+
+# Manual Backup Validation
 
 A manual GitLab application backup was created.
 
@@ -113,39 +102,47 @@ sudo gitlab-backup create
 
 Backup location:
 
-```
+```bash
 /var/opt/gitlab/backups
 ```
 
-Verification:
+Generated backup archive:
+
+```text
+1782602388_2026_06_27_18.11.6_gitlab_backup.tar
+```
+
+Evidence:
+
+![Backup Execution](evidence/04_gitlab_backup_execution_success.png)
+
+---
+
+# Backup Archive Verification
+
+Backup files were checked after creation.
+
+Command:
 
 ```bash
 sudo ls -lh /var/opt/gitlab/backups
 ```
 
-Backup archive generated:
+Validation confirmed:
 
-```
-1782602388_2026_06_27_18.11.6_gitlab_backup.tar
-```
-
-Result:
-
-✅ Backup completed successfully
-✅ Backup archive created
-✅ Backup location verified
+- Backup archive creation
+- Backup storage location
+- Successful backup generation
 
 Evidence:
 
-```
-evidence/02-backup-created.png
-```
+![Backup Verification](evidence/05_backup_archive_verification.png)
 
 ---
 
-# Configuration Backup Validation
+# GitLab Configuration Backup
 
-GitLab configuration was backed up separately.
+A configuration backup was created to protect important GitLab settings.
 
 Command:
 
@@ -153,32 +150,21 @@ Command:
 sudo gitlab-ctl backup-etc
 ```
 
-Location:
+Protected files include:
 
-```
-/etc/gitlab/config_backup
-```
-
-Important protected files:
-
-* gitlab.rb
-* gitlab-secrets.json
-
-Result:
-
-✅ Configuration backup completed successfully
+- `/etc/gitlab/gitlab.rb`
+- `/etc/gitlab/gitlab-secrets.json`
+- Trusted certificates
 
 Evidence:
 
-```
-evidence/03-config-backup.png
-```
+![Configuration Backup](evidence/06_gitlab_configuration_backup.png)
 
 ---
 
 # Backup Retention Configuration
 
-Local backup retention was configured.
+Backup retention was configured.
 
 Configuration:
 
@@ -192,26 +178,10 @@ Meaning:
 604800 seconds = 7 days
 ```
 
-Applied:
+Applied with:
 
 ```bash
 sudo gitlab-ctl reconfigure
-```
-
-Verification:
-
-```bash
-sudo grep backup_keep_time /etc/gitlab/gitlab.rb
-```
-
-Result:
-
-✅ Retention policy configured
-
-Evidence:
-
-```
-evidence/04-retention.png
 ```
 
 ---
@@ -222,60 +192,21 @@ A backup automation script was created.
 
 Location:
 
-```
+```bash
 /usr/local/sbin/gitlab-nightly-backup.sh
 ```
 
 The script performs:
 
-* Application backup
-* Configuration backup
-* Backup logging
-* Backup verification
-
-Test:
-
-```bash
-sudo /usr/local/sbin/gitlab-nightly-backup.sh
-```
-
-Result:
-
-✅ Automated backup execution completed
-
-Evidence:
-
-```
-evidence/05-backup-script.png
-```
-
----
-
-# Backup Logging
-
-Logs were created for monitoring and troubleshooting.
-
-Location:
-
-```
-/var/log/gitlab-backup
-```
-
-View logs:
-
-```bash
-sudo tail -n 50 /var/log/gitlab-backup/*.log
-```
-
-Result:
-
-✅ Backup activities recorded successfully
+- GitLab application backup
+- Configuration backup
+- Backup logging
 
 ---
 
 # Scheduled Backup
 
-Daily backup execution was configured using Cron.
+Daily automated backups were configured using Cron.
 
 Command:
 
@@ -295,163 +226,92 @@ Verification:
 sudo crontab -l
 ```
 
-Result:
+---
 
-✅ Daily backup schedule configured
+# Backup Logging
+
+Backup execution logs were configured.
+
+Log location:
+
+```bash
+/var/log/gitlab-backup
+```
+
+View logs:
+
+```bash
+sudo tail -n 50 /var/log/gitlab-backup/*.log
+```
 
 ---
 
 # MinIO Integration Research
 
-MinIO was researched as an S3-compatible object storage platform.
+MinIO was researched as an S3-compatible object storage solution for storing backup copies outside the local server.
 
-Purpose:
+Benefits:
 
-* Off-site backup storage
-* Disaster recovery support
-* Backup redundancy
-* Long-term retention
-
-Example:
-
-```bash
-mc alias set backup-minio SERVER ACCESS_KEY SECRET_KEY
-```
-
-Upload:
-
-```bash
-mc cp backup.tar backup-minio/gitlab-backups/daily/
-```
-
-Lifecycle example:
-
-```bash
-mc ilm rule add backup-minio/gitlab-backups --expire-days 30
-```
-
-Result:
-
-✅ MinIO backup and lifecycle process researched
+- Disaster recovery support
+- Off-site backup storage
+- Backup redundancy
+- Lifecycle management
 
 ---
 
 # Restore Validation
 
-## Objective
+A staging environment was prepared for restore validation.
 
-Validate that GitLab backups can be recovered safely.
+Backup tested:
 
-Restore testing was prepared on a separate staging environment.
-
-Requirements:
-
-* Same GitLab edition
-* Same installation method
-* Compatible GitLab version
-
----
-
-# Version Compatibility Issue Identified
-
-During restore preparation, a version mismatch was identified.
-
-## Implementation Environment
-
-```
-GitLab CE 19.0.2
+```text
+1782602388_2026_06_27_18.11.6_gitlab_backup.tar
 ```
 
-## Restore Validation Environment
+Restore requirement:
 
+GitLab backups require a compatible GitLab version.
+
+Restore environment:
+
+```text
+GitLab CE 18.11
 ```
-GitLab CE 18.11 requirement from project guide
-```
 
-Finding:
-
-GitLab restore requires the backup and restore environment to use the same compatible GitLab version.
-
-Resolution:
-
-A compatible GitLab CE 18.11 staging environment was prepared for restore validation.
-
----
-
-# Restore Validation Status
+Current status:
 
 Restore validation environment prepared and documented.
 
 Final restore execution requires a matching GitLab version staging environment.
 
-Planned validation:
-
-* Admin login verification
-* Project visibility check
-* Repository access check
-* Clone testing
-* GitLab service health verification
-
 ---
 
 # Challenges Encountered
 
-## GitLab Version Compatibility
-
-Backup version and restore environment versions were different.
-
-Solution:
-
-Prepared a matching version restore environment.
-
----
-
-## Backup File Permissions
-
-Backup files required permission validation before copying.
-
-Solution:
-
-Checked ownership and access permissions.
-
----
-
-## Virtual Machine Troubleshooting
-
-Experienced VM restart and network issues during staging setup.
-
-Solution:
-
-Verified VM services, GitLab status, and connectivity.
-
----
-
-## MinIO Validation
-
-Object storage testing required additional configuration review.
-
-Solution:
-
-Documented upload process and lifecycle management.
+- GitLab restore requires matching GitLab versions.
+- VirtualBox staging environment required setup and troubleshooting.
+- Backup verification required permission troubleshooting.
+- MinIO integration required additional research.
+- Sensitive GitLab configuration files required secure handling.
 
 ---
 
 # Evidence Collected
 
-Evidence includes:
+Evidence included:
 
-* GitLab environment checks
-* Backup creation screenshots
-* Configuration backup proof
-* Retention configuration
-* Automation execution
-* Cron scheduling
-* Restore preparation
+- VirtualBox staging environment
+- GitLab installation confirmation
+- GitLab environment information
+- Backup execution
+- Backup archive verification
+- Configuration backup verification
 
-Stored in:
+Evidence location:
 
 ```
-evidence/
+/evidence
 ```
 
 ---
@@ -460,34 +320,33 @@ evidence/
 
 ## Completed
 
-✅ GitLab environment assessment
-✅ Application backup testing
-✅ Configuration backup testing
-✅ Backup automation
-✅ Cron scheduling
-✅ Backup retention configuration
-✅ MinIO research
-✅ Documentation completed
-✅ Evidence collected
+✅ GitLab staging VM created  
+✅ Ubuntu environment prepared  
+✅ GitLab CE installed  
+✅ GitLab services verified  
+✅ Manual backup tested  
+✅ Configuration backup tested  
+✅ Backup files verified  
+✅ Backup automation documented  
+✅ Cron scheduling documented  
+✅ Evidence collected  
+✅ Documentation completed  
 
-## Restore Validation
+## Pending
 
-Restore environment prepared and documented.
-
-Final restore execution requires a matching GitLab version staging environment.
+Restore execution requires a matching GitLab CE version staging environment.
 
 ---
 
 # Conclusion
 
-This project successfully implemented and documented a GitLab backup strategy.
+The project successfully implemented and documented a GitLab backup solution covering:
 
-The solution provides:
+- Backup creation
+- Configuration protection
+- Backup verification
+- Automation
+- Retention planning
+- Disaster recovery preparation
 
-* Automated backups
-* Configuration protection
-* Retention management
-* Disaster recovery preparation
-* Documented recovery procedures
-
-The implementation improves GitLab reliability and reduces the risk of data loss.
+The completed documentation provides a repeatable backup process suitable for DevOps operations.
