@@ -332,9 +332,6 @@ Evidence location:
 ✅ Evidence collected  
 ✅ Documentation completed  
 
-## Pending
-
-Restore execution requires a matching GitLab CE version staging environment.
 
 ---
 
